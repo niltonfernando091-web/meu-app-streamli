@@ -420,3 +420,4 @@ if __name__ == '__main__':
     print("🛑 Para parar: CTRL+C")
     print("=" * 50)
     app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/madeireira.db'
