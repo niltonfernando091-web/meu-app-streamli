@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ config.nome }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="display-5 mb-4">
+            <i class="bi bi-speedometer2 text-success"></i> Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Cards de resumo -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Pedidos Hoje</h6>
+                        <h2 class="mb-0">{{ pedidos_hoje }}</h2>
+                    </div>
+                    <i class="bi bi-calendar-check fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Total Pedidos</h6>
+                        <h2 class="mb-0">{{ total_pedidos }}</h2>
+                    </div>
+                    <i class="bi bi-box-seam fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-dark-50">Faturamento</h6>
+                        <h2 class="mb-0">R$ {{ "%.2f"|format(total_faturamento) }}</h2>
+                    </div>
+                    <i class="bi bi-currency-dollar fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50">Ações</h6>
+                        <a href="{{ url_for('novo_pedido') }}" class="btn btn-light btn-sm mt-2">
+                            <i class="bi bi-plus-circle"></i> Novo Pedido
+                        </a>
+                    </div>
+                    <i class="bi bi-rocket-takeoff fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Últimos Pedidos -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Últimos Pedidos</h5>
+            </div>
+            <div class="card-body">
+                {% if ultimos_pedidos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Data</th>
+                                <th>Cliente</th>
+                                <th>Total</th>
+                                <th>Pagamento</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pedido in ultimos_pedidos %}
+                            <tr>
+                                <td><strong>#{{ pedido.id }}</strong></td>
+                                <td>{{ pedido.data }}</td>
+                                <td>{{ pedido.cliente_nome }}</td>
+                                <td><strong>R$ {{ "%.2f"|format(pedido.total_liquido) }}</strong></td>
+                                <td>{{ pedido.forma_pagamento }}</td>
+                                <td>
+                                    <a href="{{ url_for('visualizar_pdf', pedido_id=pedido.id) }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-file-pdf"></i> PDF
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="{{ url_for('historico') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-right"></i> Ver todos
+                </a>
+                {% else %}
+                <p class="text-muted text-center my-3">
+                    <i class="bi bi-inbox"></i> Nenhum pedido cadastrado ainda.
+                    <br>
+                    <a href="{{ url_for('novo_pedido') }}" class="btn btn-success btn-sm mt-2">
+                        <i class="bi bi-plus-circle"></i> Criar primeiro pedido
+                    </a>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Pedido - {{ config.nome }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-5">
+                <i class="bi bi-plus-circle text-success"></i> Novo Pedido
+            </h1>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Formulário do Pedido -->
+<form method="POST" id="formPedido" action="{{ url_for('novo_pedido') }}">
+    
+    <!-- 1. DADOS DO CLIENTE -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-person"></i> Dados do Cliente</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label for="cliente_nome" class="form-label">Nome do Cliente *</label>
+                    <input type="text" class="form-control" id="cliente_nome" name="cliente_nome" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="cliente_cpf" class="form-label">CPF/CNPJ</label>
+                    <input type="text" class="form-control" id="cliente_cpf" name="cliente_cpf" placeholder="000.000.000-00">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. ADICIONAR PRODUTO -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-box"></i> Adicionar Produto</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="tipo_produto" class="form-label">Tipo *</label>
+                    <select class="form-select" id="tipo_produto">
+                        <option value="">Selecione...</option>
+                        {% for preco in precos %}
+                            <option value="{{ preco.nome }}" data-preco="{{ preco.preco }}" data-tipo="{{ preco.tipo }}">
+                                {{ preco.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="nome_madeira" class="form-label">Nome da Madeira *</label>
+                    <input type="text" class="form-control" id="nome_madeira" placeholder="Ex: Pinus, Eucalipto">
+                </div>
+                <div class="col-md-2">
+                    <label for="comprimento" class="form-label">Comprimento (m) *</label>
+                    <input type="number" step="0.01" class="form-control" id="comprimento" min="0.01">
+                </div>
+                <div class="col-md-2">
+                    <label for="quantidade" class="form-label">Quantidade *</label>
+                    <input type="number" class="form-control" id="quantidade" min="1" value="1">
+                </div>
+                <div class="col-md-2">
+                    <label for="preco_metro" class="form-label">Preço/m</label>
+                    <input type="number" step="0.01" class="form-control" id="preco_metro" readonly>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <div id="preco_personalizado" style="display: none;" class="mb-2">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>Tábua 20+</strong>: Digite a largura em centímetros. 
+                        O preço será R$ 1,00 por centímetro.
+                        <div class="mt-2">
+                            <label for="largura_cm" class="form-label">Largura (cm):</label>
+                            <input type="number" class="form-control" id="largura_cm" step="1" min="20" style="width: 150px;">
+                            <small class="text-muted">Mínimo 20 cm</small>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" id="btnAdicionarItem">
+                    <i class="bi bi-plus-circle"></i> Adicionar Item
+                </button>
+                <button type="button" class="btn btn-danger" id="btnLimparItens">
+                    <i class="bi bi-trash"></i> Limpar Todos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. ITENS ADICIONADOS -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Itens Adicionados</h5>
+            <span class="badge bg-primary" id="contadorItens">0 itens</span>
+        </div>
+        <div class="card-body">
+            <div id="areaItens" class="table-responsive">
+                <table class="table table-hover" id="tabelaItens">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Madeira</th>
+                            <th class="text-end">Compr. (m)</th>
+                            <th class="text-end">Qtd</th>
+                            <th class="text-end">Preço/m</th>
+                            <th class="text-end">Subtotal</th>
+                            <th class="text-center">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaItensBody">
+                        <tr id="linhaVazia">
+                            <td colspan="7" class="text-center text-muted py-3">
+                                <i class="bi bi-inbox"></i> Nenhum item adicionado
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. FINALIZAR PEDIDO -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-currency-dollar"></i> Finalizar Pedido</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Total Bruto</label>
+                        <h4 id="totalBruto" class="text-success">R$ 0,00</h4>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="desconto" class="form-label">Desconto (%)</label>
+                        <input type="number" class="form-control" id="desconto" name="desconto" min="0" max="100" step="0.5" value="0">
+                        <div id="descontoInfo" style="display: none;">
+                            <small class="text-danger" id="descontoValor"></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Total Líquido</label>
+                        <h4 id="totalLiquido" class="text-primary">R$ 0,00</h4>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="forma_pagamento" class="form-label">Forma de Pagamento *</label>
+                    <select class="form-select" id="forma_pagamento" name="forma_pagamento" required>
+                        <option value="">Selecione...</option>
+                        <option value="À Vista">À Vista</option>
+                        <option value="Prazo 30 dias">Prazo 30 dias</option>
+                        <option value="Prazo 60 dias">Prazo 60 dias</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Boleto">Boleto</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success btn-lg w-100" id="btnFinalizar">
+                        <i class="bi bi-check-circle"></i> Gerar PDF e Salvar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- CAMPO OCULTO PARA OS ITENS -->
+            <input type="hidden" name="itens_json" id="itens_json" value="">
+        </div>
+    </div>
+</form>
+
+<!-- ============================================ -->
+<!-- SCRIPT CORRIGIDO - DENTRO DO PRÓPRIO HTML -->
+<!-- ============================================ -->
+<script>
+// ============================================
+// SISTEMA DE VENDAS - VERSÃO CORRIGIDA
+// ============================================
+
+let itens = [];
+let totalBruto = 0;
+
+// Função para adicionar item (GLOBAL)
+window.adicionarItem = function() {
+    console.log("➕ Adicionando item...");
+    
+    const tipoProduto = document.getElementById('tipo_produto');
+    const nomeMadeira = document.getElementById('nome_madeira');
+    const comprimento = document.getElementById('comprimento');
+    const quantidade = document.getElementById('quantidade');
+    const precoMetro = document.getElementById('preco_metro');
+    const divPersonalizado = document.getElementById('preco_personalizado');
+    const larguraCm = document.getElementById('largura_cm');
+
+    // Validações
+    if (!tipoProduto.value) {
+        alert('⚠️ Selecione um tipo de produto!');
+        tipoProduto.focus();
+        return;
+    }
+
+    if (!nomeMadeira.value.trim()) {
+        alert('⚠️ Digite o nome da madeira!');
+        nomeMadeira.focus();
+        return;
+    }
+
+    if (!comprimento.value || parseFloat(comprimento.value) <= 0) {
+        alert('⚠️ Digite um comprimento válido!');
+        comprimento.focus();
+        return;
+    }
+
+    if (!quantidade.value || parseInt(quantidade.value) <= 0) {
+        alert('⚠️ Digite uma quantidade válida!');
+        quantidade.focus();
+        return;
+    }
+
+    // Tábua 20+
+    if (divPersonalizado.style.display === 'block') {
+        if (!larguraCm.value || parseFloat(larguraCm.value) < 20) {
+            alert('⚠️ Para Tábua 20+, digite a largura (mínimo 20cm)!');
+            larguraCm.focus();
+            return;
+        }
+        precoMetro.value = parseFloat(larguraCm.value);
+    }
+
+    const preco = parseFloat(precoMetro.value);
+    if (!preco || preco <= 0) {
+        alert('⚠️ Preço inválido!');
+        return;
+    }
+
+    const comp = parseFloat(comprimento.value);
+    const qtd = parseInt(quantidade.value);
+    const subtotal = comp * qtd * preco;
+
+    // Criar item
+    const item = {
+        tipo_produto: tipoProduto.value,
+        nome_madeira: nomeMadeira.value.trim(),
+        comprimento: comp,
+        quantidade: qtd,
+        preco_metro: preco,
+        subtotal: subtotal
+    };
+
+    itens.push(item);
+    totalBruto += subtotal;
+
+    console.log(`✅ Item adicionado: ${item.tipo_produto} - ${item.nome_madeira}`);
+    console.log(`   Subtotal: R$ ${item.subtotal.toFixed(2)}`);
+
+    // Atualizar
+    atualizarTabela();
+    atualizarTotal();
+    document.getElementById('itens_json').value = JSON.stringify(itens);
+
+    // Limpar campos
+    nomeMadeira.value = '';
+    comprimento.value = '';
+    quantidade.value = 1;
+    if (divPersonalizado.style.display === 'block') {
+        larguraCm.value = '';
+        precoMetro.value = 0;
+    }
+    tipoProduto.focus();
+};
+
+// Função para remover item (GLOBAL)
+window.removerItem = function(index) {
+    totalBruto -= itens[index].subtotal;
+    itens.splice(index, 1);
+    document.getElementById('itens_json').value = JSON.stringify(itens);
+    atualizarTabela();
+    atualizarTotal();
+    console.log(`🗑️ Item removido. Restam: ${itens.length}`);
+};
+
+// Função para atualizar tabela
+function atualizarTabela() {
+    const tbody = document.getElementById('tabelaItensBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    if (itens.length === 0) {
+        tbody.innerHTML = `
+            <tr id="linhaVazia">
+                <td colspan="7" class="text-center text-muted py-3">
+                    <i class="bi bi-inbox"></i> Nenhum item adicionado
+                </td>
+            </tr>
+        `;
+        document.getElementById('contadorItens').textContent = '0 itens';
+        return;
+    }
+
+    itens.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.className = 'item-row';
+        row.innerHTML = `
+            <td><strong>${item.tipo_produto}</strong></td>
+            <td>${item.nome_madeira}</td>
+            <td class="text-end">${item.comprimento.toFixed(2)}</td>
+            <td class="text-end">${item.quantidade}</td>
+            <td class="text-end">R$ ${item.preco_metro.toFixed(2)}</td>
+            <td class="text-end">
+                <strong>R$ ${item.subtotal.toFixed(2)}</strong>
+            </td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-danger" onclick="removerItem(${index})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    document.getElementById('contadorItens').textContent = `${itens.length} itens`;
+}
+
+// Função para atualizar total
+function atualizarTotal() {
+    const desconto = parseFloat(document.getElementById('desconto').value) || 0;
+    const totalLiquido = totalBruto * (1 - desconto / 100);
+    
+    document.getElementById('totalBruto').textContent = `R$ ${totalBruto.toFixed(2)}`;
+    document.getElementById('totalLiquido').textContent = `R$ ${totalLiquido.toFixed(2)}`;
+    
+    if (desconto > 0) {
+        document.getElementById('descontoValor').textContent = `- R$ ${(totalBruto * desconto / 100).toFixed(2)}`;
+        document.getElementById('descontoInfo').style.display = 'block';
+    } else {
+        document.getElementById('descontoInfo').style.display = 'none';
+    }
+}
+
+// ============================================
+// INICIALIZAÇÃO
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("✅ JavaScript carregado!");
+    
+    // Máscara para CPF
+    const cpfInput = document.getElementById('cliente_cpf');
+    if (cpfInput) {
+        cpfInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+    }
+
+    // Carregar preço ao selecionar produto
+    const tipoProduto = document.getElementById('tipo_produto');
+    if (tipoProduto) {
+        tipoProduto.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const preco = selectedOption.dataset.preco;
+            const tipo = selectedOption.dataset.tipo;
+            const precoInput = document.getElementById('preco_metro');
+            const divPersonalizado = document.getElementById('preco_personalizado');
+            
+            if (tipo === 'personalizado') {
+                divPersonalizado.style.display = 'block';
+                precoInput.value = 0;
+                document.getElementById('largura_cm').value = '';
+            } else {
+                divPersonalizado.style.display = 'none';
+                precoInput.value = preco;
+            }
+        });
+    }
+
+    // Tábua 20+ - calcular preço pela largura
+    const larguraCm = document.getElementById('largura_cm');
+    if (larguraCm) {
+        larguraCm.addEventListener('input', function() {
+            const largura = parseFloat(this.value);
+            if (largura >= 20) {
+                document.getElementById('preco_metro').value = largura;
+            }
+        });
+    }
+
+    // Botão Adicionar Item
+    const btnAdicionar = document.getElementById('btnAdicionarItem');
+    if (btnAdicionar) {
+        btnAdicionar.addEventListener('click', window.adicionarItem);
+        console.log("✅ Botão 'Adicionar Item' configurado");
+    }
+
+    // Botão Limpar Itens
+    const btnLimpar = document.getElementById('btnLimparItens');
+    if (btnLimpar) {
+        btnLimpar.addEventListener('click', function() {
+            if (itens.length > 0 && confirm('Tem certeza que deseja limpar todos os itens?')) {
+                itens = [];
+                totalBruto = 0;
+                atualizarTabela();
+                atualizarTotal();
+                document.getElementById('itens_json').value = '';
+                console.log("🗑️ Todos os itens removidos!");
+            }
+        });
+    }
+
+    // Enter para adicionar
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && e.target.closest('#formPedido')) {
+            e.preventDefault();
+            window.adicionarItem();
+        }
+    });
+
+    // Atualizar total quando desconto mudar
+    const descontoInput = document.getElementById('desconto');
+    if (descontoInput) {
+        descontoInput.addEventListener('input', atualizarTotal);
+    }
+
+    // ============================================
+    // ENVIO DO FORMULÁRIO
+    // ============================================
+    const form = document.getElementById('formPedido');
+    if (form) {
+        console.log("✅ Formulário encontrado!");
+        
+        form.addEventListener('submit', function(e) {
+            console.log("📤 Enviando formulário...");
+            console.log(`📦 Itens no pedido: ${itens.length}`);
+            
+            // VALIDAÇÕES
+            if (itens.length === 0) {
+                e.preventDefault();
+                alert('⚠️ Adicione pelo menos um item ao pedido!');
+                return false;
+            }
+            
+            const clienteNome = document.getElementById('cliente_nome');
+            if (!clienteNome.value.trim()) {
+                e.preventDefault();
+                alert('⚠️ Digite o nome do cliente!');
+                clienteNome.focus();
+                return false;
+            }
+            
+            const formaPagamento = document.getElementById('forma_pagamento');
+            if (!formaPagamento.value) {
+                e.preventDefault();
+                alert('⚠️ Selecione a forma de pagamento!');
+                formaPagamento.focus();
+                return false;
+            }
+            
+            // ATUALIZAR O CAMPO OCULTO
+            document.getElementById('itens_json').value = JSON.stringify(itens);
+            
+            console.log("✅ Dados preparados para envio:");
+            console.log(`   Cliente: ${clienteNome.value}`);
+            console.log(`   Itens: ${itens.length}`);
+            console.log(`   Total: R$ ${totalBruto.toFixed(2)}`);
+            
+            return true;
+        });
+    } else {
+        console.error("❌ Formulário não encontrado!");
+    }
+});
+</script>
+{% endblock %}

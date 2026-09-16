@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Preços - {{ config.nome }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-5">
+                <i class="bi bi-gear text-warning"></i> Gerenciar Preços
+            </h1>
+            <a href="{{ url_for('ver_precos') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted">
+                    <i class="bi bi-info-circle"></i> 
+                    Clique em "Editar" para alterar o preço de cada produto.
+                </p>
+                
+                {% if precos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Produto</th>
+                                <th>Tipo</th>
+                                <th class="text-end">Preço Atual</th>
+                                <th class="text-center">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for preco in precos %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td><strong>{{ preco.nome }}</strong></td>
+                                <td>
+                                    {% if preco.tipo == 'personalizado' %}
+                                        <span class="badge bg-info">Por centímetro</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Fixo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <strong>R$ {{ "%.2f"|format(preco.preco) }}</strong>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#modalPreco{{ preco.id }}">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: #ffc107;"></i>
+                    <h4 class="mt-3">Nenhum preço cadastrado!</h4>
+                    <p class="text-muted">Execute o script popular_banco.py para cadastrar os preços.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modais para editar cada preço -->
+{% for preco in precos %}
+<div class="modal fade" id="modalPreco{{ preco.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil"></i> Editar Preço - {{ preco.nome }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('gerenciar_precos') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="produto_id" value="{{ preco.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">Produto</label>
+                        <input type="text" class="form-control" value="{{ preco.nome }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="novo_preco" class="form-label">
+                            {% if preco.tipo == 'personalizado' %}
+                                Novo preço por centímetro (R$)
+                            {% else %}
+                                Novo preço por metro (R$)
+                            {% endif %}
+                        </label>
+                        <input type="number" step="0.01" class="form-control" name="novo_preco" 
+                               value="{{ preco.preco }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

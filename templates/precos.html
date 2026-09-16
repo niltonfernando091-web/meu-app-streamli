@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Tabela de Preços - {{ config.nome }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-5">
+                <i class="bi bi-tag text-success"></i> Tabela de Preços
+            </h1>
+            <a href="{{ url_for('gerenciar_precos') }}" class="btn btn-warning">
+                <i class="bi bi-gear"></i> Gerenciar Preços
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Produto</th>
+                                <th>Tipo</th>
+                                <th class="text-end">Preço por Metro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for preco in precos %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td><strong>{{ preco.nome }}</strong></td>
+                                <td>
+                                    {% if preco.tipo == 'personalizado' %}
+                                        <span class="badge bg-info">Por centímetro</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Fixo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if preco.tipo == 'personalizado' %}
+                                        <strong>R$ {{ "%.2f"|format(preco.preco) }}/cm</strong>
+                                    {% else %}
+                                        <strong>R$ {{ "%.2f"|format(preco.preco) }}</strong>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
