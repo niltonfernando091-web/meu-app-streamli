@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'madeireira2026'
 
 # ========== BANCO DE DADOS ==========
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///madeireira.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/madeireira.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
@@ -420,4 +420,4 @@ if __name__ == '__main__':
     print("🛑 Para parar: CTRL+C")
     print("=" * 50)
     app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/madeireira.db'
+    
